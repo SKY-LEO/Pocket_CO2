@@ -39,7 +39,7 @@
 #define LED_RED 0xc4
 #define MOTOR_PIN 0xc5
 
-#define DEBUG_MODE
+//#define DEBUG_MODE
 
 typedef struct tagState
 {
@@ -342,7 +342,7 @@ int iSelItem = 0;
 int y, bDone = 0;
 char szTemp[16];
 STATE oldstate = state;
-
+pinMode(MOTOR_PIN, OUTPUT);
 	   oledInit(0x3c, 400000);
 	   oledFill(0);
 	   oledContrast(150);
@@ -496,9 +496,6 @@ void RunLowPower(void)
     scd41_start(SCD_POWERMODE_LOW); // start low power mode (available on SCD40 & SCD41)
 
 	while (1) {
-		if ((iSampleTick & 7) == 0) { // blink LED once every 2 seconds to show we're running
-			  BlinkLED(LED_GREEN, 2);
-		}
 		i = GetButtons();
 		if (i == 3) { // both buttons pressed, return to menu
 			if (bWasSuspended == 1) {
@@ -530,6 +527,14 @@ void RunLowPower(void)
 				I2CSetSpeed(50000);
 			}
 	       scd41_getSample();
+	       if(_iCO2<1000){ // show state by LEDs
+               BlinkLED(LED_GREEN, 2);
+           } else if(_iCO2 > 1000 && _iCO2 < 2000){
+               BlinkLED(LED_GREEN, 2);
+               BlinkLED(LED_RED, 3);
+           } else {
+               BlinkLED(LED_RED, 3);
+           }
 	       iSampleTick = 0; // restart the 30 second timer for the next sample
 		}
 		if (iUITick > 0) {
@@ -698,7 +703,7 @@ void RunCalibrate(void)
 
 int main(void)
 {
-
+    int bWasSuspended = 0;
     Delay_Init();
     ReadFlash(); // get the user settings from FLASH
 //    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
@@ -757,9 +762,14 @@ menu_top:
 			Delay_Ms(3*82); // use a power wasting delay to allow SWDIO to work
 #else
 			Standby82ms(3); // conserve power (1.8mA running, 10uA standby)
+			bWasSuspended = 1;
 #endif
 			j = GetButtons();
 			if (j == 3) { // both buttons pressed
+			    if (bWasSuspended == 1) {
+			                    I2CInit(50000);
+			                    bWasSuspended = 0;
+			    }
  			    scd41_stop(); // stop periodic measurement
 				goto menu_top;
 			}
