@@ -527,7 +527,7 @@ void RunLowPower(void)
 				I2CSetSpeed(50000);
 			}
 	       scd41_getSample();
-	       if(_iCO2<1000){ // show state by LEDs
+	       if(_iCO2 < 1000){ // show state by LEDs
                BlinkLED(LED_GREEN, 2);
            } else if(_iCO2 > 1000 && _iCO2 < 2000){
                BlinkLED(LED_GREEN, 2);
